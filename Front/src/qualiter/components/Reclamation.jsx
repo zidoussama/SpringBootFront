@@ -1,4 +1,9 @@
-import React, { useState } from 'react'
+import React, {
+	useEffect,
+	useState,
+} from 'react'
+import axios from 'axios'
+import Cookies from 'js-cookie'
 import {
 	CheckCircle2,
 	XCircle,
@@ -29,23 +34,164 @@ function InfoCard({
 	)
 }
 
-export default function Reclamation({
-	retours,
-	EtatTraitement,
-	Gravite,
-	getStatusStyle,
-	updateRetour,
-}) {
-	const [selectedRetour, setSelectedRetour] =
-		useState(null)
-	const [showTreatModal, setShowTreatModal] =
-		useState(false)
-	const [treatmentForm, setTreatmentForm] =
-		useState({
-			etatTraitement: 'TRAITE',
-			gravite: 'MOYENNE',
-			note: '',
+function normalizeRetours(payload) {
+	const list = Array.isArray(payload)
+		? payload
+		: Array.isArray(payload?.data)
+			? payload.data
+			: []
+
+	return list
+		.map((item) => ({
+			id: item.id,
+			produitId:
+				item.produitId ??
+				item.produit?.id ??
+				null,
+			clientId:
+				item.clientId ??
+				item.utilisateurId ??
+				item.client?.id ??
+				item.utilisateur?.id ??
+				null,
+			quantite: item.quantite ?? 1,
+			produit:
+				item.produit?.nom ??
+				item.produit?.name ??
+				item.produit?.libelle ??
+				item.produit ??
+				`Produit #${item.produitId ?? item.id}`,
+			client:
+				item.client?.nom ??
+				item.client?.name ??
+				item.utilisateur?.nom ??
+				item.utilisateur?.name ??
+				item.client ??
+				item.utilisateur ??
+				`Client #${item.clientId ?? item.utilisateurId ?? item.id}`,
+			raison: item.raison ?? '',
+			etatTraitement: item.etatTraitement ?? 'EN_COURS',
+			gravite: item.gravite ?? 'MOYENNE',
+			note: item.note ?? '',
+			date:
+				item.dateRetour ??
+				item.date ??
+				item.createdAt ??
+				'',
+		}))
+		.sort((left, right) =>
+			String(right.date).localeCompare(String(left.date))
+		)
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
+const RETOURS_ENDPOINT = `${API_BASE_URL}/retours/getall`
+const UPDATE_RETOUR_ENDPOINT = `${API_BASE_URL}/retours/update`
+
+const getToken = () => Cookies.get('auth_token') ?? ''
+
+export default function Reclamation() {
+	const [retours, setRetours] = useState([])
+	const [loading, setLoading] = useState(true)
+	const [savingId, setSavingId] = useState(null)
+	const [error, setError] = useState('')
+	const [selectedRetour, setSelectedRetour] = useState(null)
+	const [showTreatModal, setShowTreatModal] = useState(false)
+	const [treatmentForm, setTreatmentForm] = useState({
+		etatTraitement: 'TRAITE',
+		gravite: 'MOYENNE',
+		note: '',
+	})
+
+	const EtatTraitement = ['REJCTED', 'EN_COURS', 'TRAITE']
+	const Gravite = ['FAIBLE', 'MOYENNE', 'ELEVEE', 'CRITIQUE']
+
+	const getStatusStyle = (etatTraitement) => {
+		switch (etatTraitement) {
+			case 'TRAITE':
+				return 'bg-emerald-100 text-emerald-700'
+
+			case 'REJCTED':
+			case 'REJECT':
+				return 'bg-rose-100 text-rose-700'
+
+			case 'EN_COURS':
+				return 'bg-amber-100 text-amber-700'
+
+			default:
+				return 'bg-slate-100 text-slate-700'
+		}
+	}
+
+	const fetchRetours = async () => {
+		try {
+			setLoading(true)
+			setError('')
+
+			const token = getToken()
+
+			if (!token) {
+				throw new Error('Vous devez être connecté')
+			}
+
+			const response = await axios.get(RETOURS_ENDPOINT, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			})
+
+			setRetours(normalizeRetours(response.data))
+		} catch (err) {
+			setError(
+				err.response?.data?.message ||
+				err.message ||
+				'Erreur lors du chargement des retours'
+			)
+		} finally {
+			setLoading(false)
+		}
+	}
+
+	useEffect(() => {
+		fetchRetours()
+	}, [])
+
+	const updateRetour = async (retour, updates) => {
+		const token = getToken()
+
+		if (!token) {
+			throw new Error('Vous devez être connecté')
+		}
+
+		const payload = {
+			produitId: retour.produitId,
+			clientId: retour.clientId,
+			quantite: retour.quantite,
+			raison: retour.raison,
+			dateRetour: retour.date,
+			etatTraitement: updates.etatTraitement ?? retour.etatTraitement,
+			gravite: updates.gravite ?? retour.gravite,
+			note: updates.note ?? retour.note,
+		}
+
+		await axios.put(`${UPDATE_RETOUR_ENDPOINT}/${retour.id}`, payload, {
+			headers: {
+				Authorization: `Bearer ${token}`,
+				'Content-Type': 'application/json',
+			},
 		})
+
+		setRetours((prev) =>
+			prev.map((item) =>
+				item.id === retour.id
+					? {
+						...item,
+						...updates,
+					}
+					: item
+			)
+		)
+	}
 
 	function openTreatModal(retour) {
 		setSelectedRetour(retour)
@@ -62,34 +208,84 @@ export default function Reclamation({
 		setSelectedRetour(null)
 	}
 
-	function submitTreatment(e) {
+	async function submitTreatment(e) {
 		e.preventDefault()
 
 		if (!selectedRetour) {
 			return
 		}
 
-		updateRetour(
-			selectedRetour.id,
-			'gravite',
-			treatmentForm.gravite
-		)
-		updateRetour(
-			selectedRetour.id,
-			'note',
-			treatmentForm.note.trim()
-		)
-		updateRetour(
-			selectedRetour.id,
-			'etatTraitement',
-			treatmentForm.etatTraitement
-		)
+		try {
+			setSavingId(selectedRetour.id)
+			await updateRetour(selectedRetour, {
+				gravite: treatmentForm.gravite,
+				note: treatmentForm.note.trim(),
+				etatTraitement: treatmentForm.etatTraitement,
+			})
+			closeTreatModal()
+		} catch (err) {
+			setError(
+				err.response?.data?.message ||
+				err.message ||
+				'Erreur lors de la mise à jour du retour'
+			)
+		} finally {
+			setSavingId(null)
+		}
+	}
 
-		closeTreatModal()
+	async function rejectRetour(retour) {
+		try {
+			setSavingId(retour.id)
+			await updateRetour(retour, {
+				etatTraitement: 'REJCTED',
+			})
+		} catch (err) {
+			setError(
+				err.response?.data?.message ||
+				err.message ||
+				'Erreur lors du rejet du retour'
+			)
+		} finally {
+			setSavingId(null)
+		}
 	}
 
 	return (
 		<div className="space-y-8">
+			<div className="flex items-center justify-between gap-4">
+				<div>
+					<p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
+						Service Qualité
+					</p>
+
+					<h2 className="text-3xl font-bold text-slate-800 mt-2">
+						RetourProduit
+					</h2>
+
+					<p className="text-slate-500 mt-2">
+						Traitement des retours depuis l'API.
+					</p>
+				</div>
+			</div>
+
+			{loading && (
+				<div className="rounded-3xl border border-slate-200 bg-white p-8 text-slate-500">
+					Chargement des retours...
+				</div>
+			)}
+
+			{error && (
+				<div className="rounded-3xl border border-rose-200 bg-rose-50 px-5 py-4 text-rose-700">
+					{error}
+				</div>
+			)}
+
+			{!loading && !error && retours.length === 0 && (
+				<div className="rounded-3xl border border-slate-200 bg-white p-8 text-slate-500">
+					Aucun retour disponible.
+				</div>
+			)}
 
 			<div className="grid md:grid-cols-3 gap-6">
 				<InfoCard
@@ -103,9 +299,7 @@ export default function Reclamation({
 					title="En cours"
 					value={
 						retours.filter(
-							(r) =>
-								r.etatTraitement ===
-								'EN_COURS'
+							(r) => r.etatTraitement === 'EN_COURS'
 						).length
 					}
 					hint="Demandes en traitement"
@@ -116,9 +310,7 @@ export default function Reclamation({
 					title="Traités"
 					value={
 						retours.filter(
-							(r) =>
-								r.etatTraitement ===
-								'TRAITE'
+							(r) => r.etatTraitement === 'TRAITE'
 						).length
 					}
 					hint="Retours validés"
@@ -127,7 +319,6 @@ export default function Reclamation({
 			</div>
 
 			<div className="bg-white rounded-3xl border border-slate-200 p-8">
-
 				<h2 className="text-2xl font-bold text-slate-800 mb-6">
 					RetourProduit
 				</h2>
@@ -138,9 +329,7 @@ export default function Reclamation({
 							key={retour.id}
 							className="border border-slate-200 rounded-3xl p-6 bg-slate-50/40"
 						>
-
 							<div className="flex items-start justify-between gap-4">
-
 								<div>
 									<h3 className="text-xl font-bold text-slate-800">
 										{retour.produit}
@@ -185,24 +374,20 @@ export default function Reclamation({
 
 							<div className="flex gap-3 mt-6">
 								<button
-									onClick={() =>
-										openTreatModal(retour)
-									}
-									className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 rounded-2xl font-semibold transition"
+									type="button"
+									onClick={() => openTreatModal(retour)}
+									disabled={savingId === retour.id}
+									className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 rounded-2xl font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
 								>
 									<CheckCircle2 size={18} />
 									Traiter
 								</button>
 
 								<button
-									onClick={() =>
-										updateRetour(
-											retour.id,
-											'etatTraitement',
-											'REJCTED'
-										)
-									}
-									className="flex items-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-5 py-3 rounded-2xl font-semibold transition"
+									type="button"
+									onClick={() => rejectRetour(retour)}
+									disabled={savingId === retour.id}
+									className="flex items-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-5 py-3 rounded-2xl font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
 								>
 									<XCircle size={18} />
 									Rejeter
@@ -247,28 +432,19 @@ export default function Reclamation({
 									EtatTraitement
 								</label>
 								<select
-									value={
-										treatmentForm.etatTraitement
-									}
+									value={treatmentForm.etatTraitement}
 									onChange={(e) =>
-										setTreatmentForm(
-											(prev) => ({
-												...prev,
-												etatTraitement:
-													e.target.value,
-											})
-										)
+										setTreatmentForm((prev) => ({
+											...prev,
+											etatTraitement: e.target.value,
+										}))
 									}
 									className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-400"
 								>
 									{EtatTraitement.filter(
-										(etat) =>
-											etat !== 'REJCTED'
+										(etat) => etat !== 'REJCTED'
 									).map((etat) => (
-										<option
-											key={etat}
-											value={etat}
-										>
+										<option key={etat} value={etat}>
 											{etat}
 										</option>
 									))}
@@ -283,21 +459,15 @@ export default function Reclamation({
 									required
 									value={treatmentForm.gravite}
 									onChange={(e) =>
-										setTreatmentForm(
-											(prev) => ({
-												...prev,
-												gravite:
-													e.target.value,
-											})
-										)
+										setTreatmentForm((prev) => ({
+											...prev,
+											gravite: e.target.value,
+										}))
 									}
 									className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-400"
 								>
 									{Gravite.map((gravite) => (
-										<option
-											key={gravite}
-											value={gravite}
-										>
+										<option key={gravite} value={gravite}>
 											{gravite}
 										</option>
 									))}
@@ -336,9 +506,12 @@ export default function Reclamation({
 
 							<button
 								type="submit"
-								className="rounded-2xl px-5 py-3 font-semibold bg-emerald-500 hover:bg-emerald-600 text-white"
+								disabled={savingId === selectedRetour.id}
+								className="rounded-2xl px-5 py-3 font-semibold bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-60 disabled:cursor-not-allowed"
 							>
-								Valider le traitement
+								{savingId === selectedRetour.id
+									? 'Enregistrement...'
+									: 'Valider le traitement'}
 							</button>
 						</div>
 					</form>

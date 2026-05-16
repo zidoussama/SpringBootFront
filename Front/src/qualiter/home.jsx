@@ -105,28 +105,6 @@ export default function QualityEmployeeHome({
     ])
 
   /* =========================================
-     HISTORIQUE
-  ========================================= */
-
-  const [historique] = React.useState([
-    {
-      id: 1,
-      retour: 'Retour #12',
-      action: 'Retour traité',
-      employe: 'Service Qualité',
-      date: '2026-05-15',
-    },
-
-    {
-      id: 2,
-      retour: 'Retour #10',
-      action: 'Retour rejeté',
-      employe: 'Service Qualité',
-      date: '2026-05-14',
-    },
-  ])
-
-  /* =========================================
      UPDATE
   ========================================= */
 
@@ -357,7 +335,6 @@ export default function QualityEmployeeHome({
 
         {active === 'historique' && (
           <HistoriqueRetour
-            historique={historique}
           />
         )}
 
