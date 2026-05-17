@@ -41,10 +41,6 @@ function ProduitsPage() {
   const [loading, setLoading] =
     useState(false)
 
-  /* =======================================================
-     FETCH PRODUCTS
-  ======================================================= */
-
   const fetchProducts = async () => {
     try {
       setLoading(true)

@@ -8,6 +8,7 @@ import {
 	CheckCircle2,
 	XCircle,
 } from 'lucide-react'
+import {jwtDecode} from 'jwt-decode'
 
 function InfoCard({
 	title,
@@ -56,12 +57,14 @@ function normalizeRetours(payload) {
 				null,
 			quantite: item.quantite ?? 1,
 			produit:
+				item.NomProduit ??
 				item.produit?.nom ??
 				item.produit?.name ??
 				item.produit?.libelle ??
 				item.produit ??
 				`Produit #${item.produitId ?? item.id}`,
 			client:
+				item.NomClient ??
 				item.client?.nom ??
 				item.client?.name ??
 				item.utilisateur?.nom ??
@@ -72,7 +75,7 @@ function normalizeRetours(payload) {
 			raison: item.raison ?? '',
 			etatTraitement: item.etatTraitement ?? 'EN_COURS',
 			gravite: item.gravite ?? 'MOYENNE',
-			note: item.note ?? '',
+			Commentaires: item.Commentaires ?? '',
 			date:
 				item.dateRetour ??
 				item.date ??
@@ -85,8 +88,9 @@ function normalizeRetours(payload) {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
-const RETOURS_ENDPOINT = `${API_BASE_URL}/retours/getall`
+const RETOURS_ENDPOINT = `${API_BASE_URL}/retours/getbyetat/EN_COURS`
 const UPDATE_RETOUR_ENDPOINT = `${API_BASE_URL}/retours/update`
+const ADD_NON_CONFORMITE_ENDPOINT = `${API_BASE_URL}/NonConformite/add`
 
 const getToken = () => Cookies.get('auth_token') ?? ''
 
@@ -97,15 +101,33 @@ export default function Reclamation() {
 	const [error, setError] = useState('')
 	const [selectedRetour, setSelectedRetour] = useState(null)
 	const [showTreatModal, setShowTreatModal] = useState(false)
+	const token = Cookies.get('auth_token')
+	const [decoded, setDecoded] = useState(null)
+	const [name, setName] = useState('')
+	const [email, setEmail] = useState('')
+	const [role, setRole] = useState('')
+	const [adminId , setAdminId] = useState(null)
 	const [treatmentForm, setTreatmentForm] = useState({
 		etatTraitement: 'TRAITE',
 		gravite: 'MOYENNE',
 		note: '',
+		adminId: null,
 	})
 
 	const EtatTraitement = ['REJCTED', 'EN_COURS', 'TRAITE']
 	const Gravite = ['FAIBLE', 'MOYENNE', 'ELEVEE', 'CRITIQUE']
-
+	useEffect(() => {
+		if (token) {
+			const decoded = jwtDecode(token)
+			setDecoded(decoded)
+			setName(decoded.name )
+			setEmail(decoded.email)
+			setRole(decoded.role)
+			setAdminId(decoded.id)
+	
+			
+		}
+		}, [token])
 	const getStatusStyle = (etatTraitement) => {
 		switch (etatTraitement) {
 			case 'TRAITE':
@@ -139,7 +161,7 @@ export default function Reclamation() {
 					Authorization: `Bearer ${token}`,
 				},
 			})
-
+			
 			setRetours(normalizeRetours(response.data))
 		} catch (err) {
 			setError(
@@ -217,12 +239,37 @@ export default function Reclamation() {
 
 		try {
 			setSavingId(selectedRetour.id)
+			const token = getToken()
+
+			if (!token) {
+				throw new Error('Vous devez être connecté')
+			}
+
+			// Update retour with treatment info
 			await updateRetour(selectedRetour, {
 				gravite: treatmentForm.gravite,
-				note: treatmentForm.note.trim(),
+				note: treatmentForm.note,
 				etatTraitement: treatmentForm.etatTraitement,
 			})
+
+			// Add non-conformité with required API shape
+			const nonConformitePayload = {
+				description: treatmentForm.Commentaires || 'Non-conformité constatée',
+				gravity: treatmentForm.gravite,
+				retourProduitId: selectedRetour.id,
+				date: new Date().toISOString().slice(0, 19),
+				adminId: adminId || null,
+			}
+
+			await axios.post(ADD_NON_CONFORMITE_ENDPOINT, nonConformitePayload, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			})
+
 			closeTreatModal()
+			alert('Traitement enregistré et non-conformité ajoutée')
 		} catch (err) {
 			setError(
 				err.response?.data?.message ||

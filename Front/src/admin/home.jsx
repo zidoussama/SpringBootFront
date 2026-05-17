@@ -5,26 +5,21 @@ import { LayoutDashboard, FileText, Users, PackageCheck, ShieldCheck } from 'luc
 import Cookies from 'js-cookie'
 import { jwtDecode } from 'jwt-decode'
 
+import Dashboard from './components/dashboard'
 import ProduitsPage from './components/produit'
 import UsersPage from './components/user'
+import RetoursPage from './components/retour'
+import NonConformitePage from './components/nonconfirmite'
 
 
 const navItems = [
   { key: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
-  { key: 'retours', label: 'Gestion des retours', icon: FileText },
   { key: 'utilisateurs', label: 'Utilisateurs', icon: Users },
   { key: 'produit', label: 'Produits', icon: PackageCheck },
-]
+  { key: 'retours', label: 'Gestion des retours', icon: FileText },
+  { key: 'nonconfirmite', label: 'Non-conformités', icon: ShieldCheck }
 
-function StatCard({ title, value, hint, accent }) {
-  return (
-    <div className={`rounded-3xl p-6 text-white shadow-lg ${accent}`}>
-      <p className="text-sm opacity-80">{title}</p>
-      <h2 className="text-4xl font-black mt-3">{value}</h2>
-      <p className="mt-2 text-sm opacity-90">{hint}</p>
-    </div>
-  )
-}
+]
 
 export default function AdminHome({ onLogout }) {
   const [active, setActive] = React.useState('dashboard')
@@ -100,56 +95,13 @@ export default function AdminHome({ onLogout }) {
       </aside>
 
       <main className="flex-1 p-8 lg:p-10">
-        <header className="flex items-center justify-between mb-8">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-600">Administration</p>
-            <h1 className="text-4xl font-black text-slate-800 mt-2">Vue admin</h1>
-            <p className="text-slate-500 mt-2">Supervision des retours produits, utilisateurs et traitement global.</p>
-          </div>
-        </header>
+        
 
-        {active === 'dashboard' && (
-          <div className="space-y-8">
-            <div className="grid md:grid-cols-3 gap-6">
-              <StatCard title="Retours ouverts" value="24" hint="Nouvelles réclamations à traiter" accent="bg-indigo-600" />
-              <StatCard title="En cours" value="8" hint="Dossiers actuellement suivis" accent="bg-orange-500" />
-              <StatCard title="Résolus" value="16" hint="Retours terminés ce mois-ci" accent="bg-emerald-600" />
-            </div>
+        {active === 'dashboard' && <Dashboard />}
 
-            <div className="bg-white rounded-3xl border border-slate-200 p-8">
-              <h2 className="text-2xl font-bold text-slate-800 mb-6">Activité récente</h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50">
-                  <div>
-                    <h3 className="font-semibold text-slate-800">Retour autorisé</h3>
-                    <p className="text-slate-500 text-sm">Demande validée par l'administration</p>
-                  </div>
-                  <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-xl text-sm font-semibold">Validé</span>
-                </div>
+        {active === 'retours' && <RetoursPage />}
 
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50">
-                  <div>
-                    <h3 className="font-semibold text-slate-800">Litige en attente</h3>
-                    <p className="text-slate-500 text-sm">Nécessite une décision</p>
-                  </div>
-                  <span className="bg-orange-100 text-orange-600 px-4 py-2 rounded-xl text-sm font-semibold">En attente</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {active === 'retours' && (
-          <div className="bg-white rounded-3xl border border-slate-200 p-8 max-w-3xl">
-            <h2 className="text-3xl font-bold text-slate-800 mb-2">Gestion des retours</h2>
-            <p className="text-slate-500 mb-8">Espace placeholder pour administrer les réclamations et les validations.</p>
-            <div className="space-y-4 text-slate-600">
-              <p><strong>Statut :</strong> En attente de traitement</p>
-              <p><strong>Priorité :</strong> Haute</p>
-              <p><strong>Responsable :</strong> Équipe administration</p>
-            </div>
-          </div>
-        )}
+        {active === 'nonconfirmite' && <NonConformitePage />}
 
         {active === 'utilisateurs' && (
           <UsersPage />
@@ -157,6 +109,7 @@ export default function AdminHome({ onLogout }) {
         {active === 'produit' && (
           <ProduitsPage />
         )}
+
       </main>
     </div>
   )

@@ -2,35 +2,32 @@
 
 ## Base URL
 ```
-http://localhost:9000/api
+http://localhost:8080
 ```
-
-The routes below are written relative to this base URL.
 
 ---
 
-## 1. AUTHENTICATION ENDPOINTS (`/auth`)
+## 1. AUTHENTICATION ENDPOINTS (`/api/auth`)
 
 ### 1.1 Register User
 - **Method**: POST
-- **URL**: `/auth/register`
+- **URL**: `/api/auth/register`
 - **Description**: Create a new user account
 - **Request Body**:
 ```json
 {
-  "nom": "John Doe",
   "email": "user@example.com",
   "password": "password123",
+  "prenom": "John",
+  "nom": "Doe",
   "role": "USER"
 }
 ```
 - **Response**: AuthResponse with JWT token
 
-Note: the current React forms send `nom`, `email`, `password`, and `role` when creating a user.
-
 ### 1.2 Login
 - **Method**: POST
-- **URL**: `/auth/login`
+- **URL**: `/api/auth/login`
 - **Description**: Login and get JWT token
 - **Request Body**:
 ```json
@@ -43,18 +40,18 @@ Note: the current React forms send `nom`, `email`, `password`, and `role` when c
 
 ---
 
-## 2. PRODUCTS ENDPOINTS (`/produits`)
+## 2. PRODUCTS ENDPOINTS (`/api/produits`)
 
 ### 2.1 Get All Products
 - **Method**: GET
-- **URL**: `/produits/getall`
+- **URL**: `/api/produits/getall`
 - **Auth Required**: Yes
 - **Description**: Retrieve all products
 - **Response**: List of ProduitDto
 
 ### 2.2 Get Product By ID
 - **Method**: GET
-- **URL**: `/produits/get/{id}`
+- **URL**: `/api/produits/get/{id}`
 - **Auth Required**: Yes
 - **Parameters**: `id` (Long) - Product ID
 - **Description**: Get a specific product by ID
@@ -62,7 +59,7 @@ Note: the current React forms send `nom`, `email`, `password`, and `role` when c
 
 ### 2.3 Create Product
 - **Method**: POST
-- **URL**: `/produits/add`
+- **URL**: `/api/produits/add`
 - **Auth Required**: Yes
 - **Description**: Create a new product
 - **Request Body**:
@@ -79,7 +76,7 @@ Note: the current React forms send `nom`, `email`, `password`, and `role` when c
 
 ### 2.4 Update Product
 - **Method**: PUT
-- **URL**: `/produits/update/{id}`
+- **URL**: `/api/produits/update/{id}`
 - **Auth Required**: Yes
 - **Parameters**: `id` (Long) - Product ID
 - **Description**: Update an existing product
@@ -97,7 +94,7 @@ Note: the current React forms send `nom`, `email`, `password`, and `role` when c
 
 ### 2.5 Delete Product
 - **Method**: DELETE
-- **URL**: `/produits/delete/{id}`
+- **URL**: `/api/produits/delete/{id}`
 - **Auth Required**: Yes
 - **Parameters**: `id` (Long) - Product ID
 - **Description**: Delete a product
@@ -105,18 +102,18 @@ Note: the current React forms send `nom`, `email`, `password`, and `role` when c
 
 ---
 
-## 3. PRODUCT RETURNS ENDPOINTS (`/retours`)
+## 3. PRODUCT RETURNS ENDPOINTS (`/api/retours`)
 
 ### 3.1 Get All Returns
 - **Method**: GET
-- **URL**: `/retours/getall`
+- **URL**: `/api/retours/getall`
 - **Auth Required**: Yes
 - **Description**: Retrieve all product returns
 - **Response**: List of RetourProduitDto
 
 ### 3.2 Get Return By ID
 - **Method**: GET
-- **URL**: `/retours/get/{id}`
+- **URL**: `/api/retours/get/{id}`
 - **Auth Required**: Yes
 - **Parameters**: `id` (Long) - Return ID
 - **Description**: Get a specific return by ID
@@ -124,26 +121,25 @@ Note: the current React forms send `nom`, `email`, `password`, and `role` when c
 
 ### 3.3 Create Return
 - **Method**: POST
-- **URL**: `/retours/add`
+- **URL**: `/api/retours/add`
 - **Auth Required**: Yes
 - **Description**: Create a new product return
 - **Request Body**:
 ```json
 {
   "produitId": 1,
-  "utilisateurId": 1,
+  "clientId": 1,
+  "quantite": 2,
   "raison": "Product defect",
-  "etatTraitement": "EN_COURS",
-  "date": "2024-05-15T10:30:00"
+  "dateRetour": "2024-05-15",
+  "etatTraitement": "EN_ATTENTE"
 }
 ```
 - **Response**: "RetourProduit créé avec succès"
 
-Note: the current React client sends `utilisateurId` and `date` when creating a return. Keep the backend aliases (`clientId`, `dateRetour`) only if your controller still accepts them.
-
 ### 3.4 Update Return
 - **Method**: PUT
-- **URL**: `/retours/update/{id}`
+- **URL**: `/api/retours/update/{id}`
 - **Auth Required**: Yes
 - **Parameters**: `id` (Long) - Return ID
 - **Description**: Update an existing return
@@ -162,7 +158,7 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ### 3.5 Delete Return
 - **Method**: DELETE
-- **URL**: `/retours/delete/{id}`
+- **URL**: `/api/retours/delete/{id}`
 - **Auth Required**: Yes
 - **Parameters**: `id` (Long) - Return ID
 - **Description**: Delete a return
@@ -170,7 +166,7 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ### 3.6 Get Returns By State
 - **Method**: GET
-- **URL**: `/retours/getbyetat/{etat}`
+- **URL**: `/api/retours/getbyetat/{etat}`
 - **Auth Required**: Yes
 - **Parameters**: `etat` (EtatTraitement) - Treatment state (EN_ATTENTE, TRAITE, REJECT)
 - **Description**: Get returns filtered by treatment state
@@ -178,7 +174,7 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ### 3.7 Get Returns By Client
 - **Method**: GET
-- **URL**: `/retours/getbyclient/{id}`
+- **URL**: `/api/retours/getbyclient/{id}`
 - **Auth Required**: Yes
 - **Parameters**: `id` (Long) - Client ID
 - **Description**: Get all returns for a specific client
@@ -186,7 +182,7 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ### 3.8 Get Returns By Product
 - **Method**: GET
-- **URL**: `/retours/getbyproduit/{id}`
+- **URL**: `/api/retours/getbyproduit/{id}`
 - **Auth Required**: Yes
 - **Parameters**: `id` (Long) - Product ID
 - **Description**: Get all returns for a specific product
@@ -194,7 +190,7 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ### 3.9 Get Returns By Date
 - **Method**: GET
-- **URL**: `/retours/getbydate/{date}`
+- **URL**: `/api/retours/getbydate/{date}`
 - **Auth Required**: Yes
 - **Parameters**: `date` (String) - Date in format YYYY-MM-DD
 - **Description**: Get returns for a specific date
@@ -202,7 +198,7 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ### 3.10 Count Returns By State
 - **Method**: GET
-- **URL**: `/retours/countbyetat/{etat}`
+- **URL**: `/api/retours/countbyetat/{etat}`
 - **Auth Required**: Yes
 - **Parameters**: `etat` (EtatTraitement) - Treatment state
 - **Description**: Count returns by treatment state
@@ -210,25 +206,25 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ### 3.11 Count All Returns
 - **Method**: GET
-- **URL**: `/retours/count`
+- **URL**: `/api/retours/count`
 - **Auth Required**: Yes
 - **Description**: Get total count of all returns
 - **Response**: Count value
 
 ---
 
-## 4. NON-CONFORMITIES ENDPOINTS (`/NonConformite`)
+## 4. NON-CONFORMITIES ENDPOINTS (`/api/NonConformite`)
 
 ### 4.1 Get All Non-Conformities
 - **Method**: GET
-- **URL**: `/NonConformite/getall`
+- **URL**: `/api/NonConformite/getall`
 - **Auth Required**: Yes
 - **Description**: Retrieve all non-conformities
 - **Response**: List of NonConformiteDto
 
 ### 4.2 Get Non-Conformity By ID
 - **Method**: GET
-- **URL**: `/NonConformite/get/{id}`
+- **URL**: `/api/NonConformite/get/{id}`
 - **Auth Required**: Yes
 - **Parameters**: `id` (Long) - Non-conformity ID
 - **Description**: Get a specific non-conformity by ID
@@ -236,7 +232,7 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ### 4.3 Create Non-Conformity
 - **Method**: POST
-- **URL**: `/NonConformite/add`
+- **URL**: `/api/NonConformite/add`
 - **Auth Required**: Yes
 - **Description**: Create a new non-conformity
 - **Request Body**:
@@ -252,7 +248,7 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ### 4.4 Update Non-Conformity
 - **Method**: PUT
-- **URL**: `/NonConformite/update/{id}`
+- **URL**: `/api/NonConformite/update/{id}`
 - **Auth Required**: Yes
 - **Parameters**: `id` (Long) - Non-conformity ID
 - **Description**: Update an existing non-conformity
@@ -269,7 +265,7 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ### 4.5 Delete Non-Conformity
 - **Method**: DELETE
-- **URL**: `/NonConformite/delete/{id}`
+- **URL**: `/api/NonConformite/delete/{id}`
 - **Auth Required**: Yes
 - **Parameters**: `id` (Long) - Non-conformity ID
 - **Description**: Delete a non-conformity
@@ -277,7 +273,7 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ### 4.6 Get Non-Conformities By Severity
 - **Method**: GET
-- **URL**: `/NonConformite/findByGravity/{gravity}`
+- **URL**: `/api/NonConformite/findByGravity/{gravity}`
 - **Auth Required**: Yes
 - **Parameters**: `gravity` (Gravite) - Severity level (MINEURE, MAJEURE, CRITIQUE)
 - **Description**: Get non-conformities filtered by severity
@@ -285,7 +281,7 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ### 4.7 Get Non-Conformities By Date
 - **Method**: GET
-- **URL**: `/NonConformite/findByDate/{date}`
+- **URL**: `/api/NonConformite/findByDate/{date}`
 - **Auth Required**: Yes
 - **Parameters**: `date` (LocalDate) - Date in format YYYY-MM-DD
 - **Description**: Get non-conformities for a specific date
@@ -293,7 +289,7 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ### 4.8 Get Non-Conformities By Return
 - **Method**: GET
-- **URL**: `/NonConformite/findByRetour/{retourProduitId}`
+- **URL**: `/api/NonConformite/findByRetour/{retourProduitId}`
 - **Auth Required**: Yes
 - **Parameters**: `retourProduitId` (Long) - Return ID
 - **Description**: Get non-conformities for a specific return
@@ -301,18 +297,18 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ---
 
-## 5. USERS ENDPOINTS (`/users`)
+## 5. USERS ENDPOINTS (`/api/users`)
 
 ### 5.1 Get All Users
 - **Method**: GET
-- **URL**: `/users/getall`
+- **URL**: `/api/users/getall`
 - **Auth Required**: Yes
 - **Description**: Retrieve all users
 - **Response**: List of Utilisateur
 
 ### 5.2 Update User
 - **Method**: PUT
-- **URL**: `/users/update/{id}`
+- **URL**: `/api/users/update/{id}`
 - **Auth Required**: Yes
 - **Parameters**: `id` (Long) - User ID
 - **Description**: Update user information
@@ -330,11 +326,97 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 
 ### 5.3 Delete User
 - **Method**: DELETE
-- **URL**: `/users/delete/{id}`
+- **URL**: `/api/users/delete/{id}`
 - **Auth Required**: Yes
 - **Parameters**: `id` (Long) - User ID
 - **Description**: Delete a user
 - **Response**: "User deleted successfully"
+
+---
+
+## 6. HISTORIQUE RETOUR ENDPOINTS (`/api/HistoriqueRetour`)
+
+### 6.1 Get All Historique Returns
+- **Method**: GET
+- **URL**: `/api/HistoriqueRetour/all`
+- **Auth Required**: Yes
+- **Description**: Retrieve all historique retour records
+- **Response**: List of HistoriqueRetourDto
+
+### 6.2 Get Historique By ID
+- **Method**: GET
+- **URL**: `/api/HistoriqueRetour/get/{id}`
+- **Auth Required**: Yes
+- **Parameters**: `id` (Long) - Historique ID
+- **Description**: Get a specific historique retour by ID
+- **Response**: Single HistoriqueRetourDto
+
+### 6.3 Get Historique By Return Product ID
+- **Method**: GET
+- **URL**: `/api/HistoriqueRetour/getByRetourProduitId/{retourProduitId}`
+- **Auth Required**: Yes
+- **Parameters**: `retourProduitId` (Long) - Return Product ID
+- **Description**: Get historique records for a specific return product
+- **Response**: List of HistoriqueRetourDto
+
+### 6.4 Get Historique By Employee ID
+- **Method**: GET
+- **URL**: `/api/HistoriqueRetour/getByEmployeId/{employeId}`
+- **Auth Required**: Yes
+- **Parameters**: `employeId` (Long) - Employee ID
+- **Description**: Get historique records for a specific employee
+- **Response**: List of HistoriqueRetourDto
+
+### 6.5 Get Historique By Action
+- **Method**: GET
+- **URL**: `/api/HistoriqueRetour/getByAction/{action}`
+- **Auth Required**: Yes
+- **Parameters**: `action` (ActionHistorique) - Action type
+- **Description**: Get historique records filtered by action type
+- **Response**: List of HistoriqueRetourDto
+
+### 6.6 Create Historique Retour
+- **Method**: POST
+- **URL**: `/api/HistoriqueRetour/add`
+- **Auth Required**: Yes
+- **Description**: Create a new historique retour record
+- **Request Body**:
+```json
+{
+  "retourProduitId": 1,
+  "employeId": 1,
+  "action": "CREATION",
+  "description": "Return initiated",
+  "dateAction": "2024-05-15"
+}
+```
+- **Response**: HistoriqueRetour
+
+### 6.7 Update Historique Retour
+- **Method**: PUT
+- **URL**: `/api/HistoriqueRetour/update/{id}`
+- **Auth Required**: Yes
+- **Parameters**: `id` (Long) - Historique ID
+- **Description**: Update an existing historique retour record
+- **Request Body**:
+```json
+{
+  "retourProduitId": 1,
+  "employeId": 1,
+  "action": "MODIFICATION",
+  "description": "Return status updated",
+  "dateAction": "2024-05-15"
+}
+```
+- **Response**: HistoriqueRetourDto
+
+### 6.8 Delete Historique Retour
+- **Method**: DELETE
+- **URL**: `/api/HistoriqueRetour/del/{id}`
+- **Auth Required**: Yes
+- **Parameters**: `id` (Long) - Historique ID
+- **Description**: Delete a historique retour record
+- **Response**: "Historique deleted successfully"
 
 ---
 
@@ -347,36 +429,17 @@ Note: the current React client sends `utilisateurId` and `date` when creating a 
 | Product Returns | 11 |
 | Non-Conformities | 8 |
 | Users | 3 |
-| **TOTAL** | **29** |
+| Historique Retour | 8 |
+| **TOTAL** | **37** |
 
 ---
 
 ## NOTES
 
-1. **Authentication**: All endpoints except `/auth/register` and `/auth/login` require JWT token in the Authorization header
+1. **Authentication**: All endpoints except `/api/auth/register` and `/api/auth/login` require JWT token in the Authorization header
 2. **Date Format**: Use YYYY-MM-DD format for date parameters
-3. **Base URL**: from the `.env` file (`VITE_API_URL=http://localhost:9000/api` in the current frontend)
+3. **Base URL**: from the .env
 4. **Content-Type**: All POST/PUT requests require `Content-Type: application/json`
 5. **Authorization Header Format**: `Authorization: Bearer {jwt_token}`
-
----
-
-## FRONTEND COVERAGE CHECK
-
-The current React app uses these API routes:
-
-- `/auth/login`
-- `/auth/register`
-- `/produits/getall`
-- `/produits/add`
-- `/produits/update/{id}`
-- `/produits/delete/{id}`
-- `/retours/add`
-- `/retours/getbyclient/{id}`
-- `/users/getall`
-- `/users/update/{id}`
-- `/users/delete/{id}`
-
-No additional endpoint was found missing from the current frontend scan.
 
 ---

@@ -5,70 +5,80 @@ import React, {
 import axios from 'axios'
 import Cookies from 'js-cookie'
 
+const API_BASE_URL =import.meta.env.VITE_API_URL 
 
-const API_BASE_URL =
-	import.meta.env.VITE_API_URL ?? ''
+const HISTORIQUE_ENDPOINT =`${API_BASE_URL}/api/HistoriqueRetour/all`
 
-const HISTORIQUE_ENDPOINT =
-	`${API_BASE_URL}/retours/getall`
 
-const getCookieValue = (name) => {
-	const value = document.cookie
-		.split('; ')
-		.find((row) =>
-			row.startsWith(`${name}=`)
-		)
 
-	return value
-		? decodeURIComponent(
-				value.split('=')[1]
-		  )
-		: ''
-}
+const getToken = () => Cookies.get('auth_token') 
 
-const getToken = () =>
-	Cookies.get('auth_token') ||
-	getCookieValue('auth_token')
+const normalizeHistorique = (historiques) => {
+	return historiques
+		.map((item) => {
+			let actionLabel = 'Action inconnue'
 
-const normalizeHistorique = (retours) => {
-	return retours
-		.map((retour) => {
-			const etat =
-				retour.etatTraitement ||
-				'EN_COURS'
+			switch (item.action) {
+				case 'TRAITEMENT':
+					actionLabel = 'Retour traité'
+					break
 
-			let action = 'Retour en cours'
+				case 'REJET':
+					actionLabel = 'Retour rejeté'
+					break
 
-			if (etat === 'TRAITE') {
-				action = 'Retour traité'
-			} else if (etat === 'REJCTED') {
-				action = 'Retour rejeté'
+				case 'CREATION':
+					actionLabel = 'Retour créé'
+					break
+
+				case 'MODIFICATION':
+					actionLabel = 'Retour modifié'
+					break
+
+				default:
+					actionLabel =
+						item.action || 'Action inconnue'
 			}
 
 			return {
-				id: retour.id,
-				retour:
-					`Retour #${retour.id}`,
-				action,
+				id: item.id,
+
+				retour: item.retour
+					? `Retour #${item.retour.id}`
+					: 'Retour inconnu',
+
+				produitName:
+					item.produitName ||
+					'Produit inconnu',
+
+				gravite:
+					item.gravite || 'Non définie',
+
+				action: actionLabel,
+
 				employe:
-					retour.employe ||
+					item.employeName ||
+					item.employe?.nom ||
 					'Service Qualité',
+
 				date:
-					retour.date ||
-					retour.dateRetour ||
-					retour.createdAt ||
-					'',
-				etat,
+					item.date || '',
 			}
 		})
 		.sort((a, b) =>
-			String(b.date).localeCompare(String(a.date))
+			String(b.date).localeCompare(
+				String(a.date)
+			)
 		)
 }
 
 export default function HistoriqueRetour() {
-	const [historique, setHistorique] = useState([])
-	const [loading, setLoading] = useState(true)
+	const [historique, setHistorique] =
+		useState([])
+
+	const [loading, setLoading] =
+		useState(true)
+
 	const [error, setError] = useState('')
 
 	useEffect(() => {
@@ -80,7 +90,9 @@ export default function HistoriqueRetour() {
 				const token = getToken()
 
 				if (!token) {
-					throw new Error('Vous devez être connecté')
+					throw new Error(
+						'Vous devez être connecté'
+					)
 				}
 
 				const response = await axios.get(
@@ -92,16 +104,20 @@ export default function HistoriqueRetour() {
 					}
 				)
 
-				const retours = Array.isArray(response.data)
+				const historiques = Array.isArray(
+					response.data
+				)
 					? response.data
 					: response.data?.data || []
 
-				setHistorique(normalizeHistorique(retours))
+				setHistorique(
+					normalizeHistorique(historiques)
+				)
 			} catch (err) {
 				setError(
 					err.response?.data?.message ||
-					err.message ||
-					'Erreur lors du chargement de l\'historique'
+						err.message ||
+						'Erreur lors du chargement de l’historique'
 				)
 			} finally {
 				setLoading(false)
@@ -112,9 +128,9 @@ export default function HistoriqueRetour() {
 	}, [])
 
 	return (
-		<div className="bg-white rounded-3xl border border-slate-200 p-8">
+		<div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
 			<h2 className="text-3xl font-bold text-slate-800 mb-2">
-				HistoriqueRetour
+				Historique des Retours
 			</h2>
 
 			<p className="text-slate-500 mb-8">
@@ -134,36 +150,52 @@ export default function HistoriqueRetour() {
 				</p>
 			)}
 
-			{!loading && !error && historique.length === 0 && (
-				<p className="text-slate-500">
-					Aucun retour trouvé.
-				</p>
-			)}
+			{!loading &&
+				!error &&
+				historique.length === 0 && (
+					<p className="text-slate-500">
+						Aucun historique trouvé.
+					</p>
+				)}
 
 			<div className="space-y-5">
 				{historique.map((item) => (
 					<div
 						key={item.id}
-						className="border-l-4 border-sky-500 bg-slate-50 rounded-2xl p-5"
+						className="border border-slate-200 bg-slate-50 rounded-2xl p-5 hover:shadow-md transition"
 					>
-						<div className="flex items-center justify-between">
-							<div>
-								<p className="font-bold text-slate-800">
+						<div className="flex items-start justify-between gap-4">
+							<div className="space-y-2">
+								<p className="font-bold text-slate-800 text-lg">
 									{item.retour}
 								</p>
 
-								<p className="text-slate-600 mt-1">
+								<p className="text-slate-600">
 									{item.action}
 								</p>
 
-								<p className="text-sm text-slate-500 mt-1">
-									Employé:
+								<div className="flex flex-wrap gap-3 text-sm">
+									<span className="bg-sky-100 text-sky-700 px-3 py-1 rounded-full">
+										Produit :
+										{' '}
+										{item.produitName}
+									</span>
+
+									<span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full">
+										Gravité :
+										{' '}
+										{item.gravite}
+									</span>
+								</div>
+
+								<p className="text-sm text-slate-500">
+									Employé :
 									{' '}
 									{item.employe}
 								</p>
 							</div>
 
-							<span className="text-sm text-slate-400">
+							<span className="text-sm text-slate-400 whitespace-nowrap">
 								{item.date}
 							</span>
 						</div>
@@ -173,3 +205,4 @@ export default function HistoriqueRetour() {
 		</div>
 	)
 }
+
