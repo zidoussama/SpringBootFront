@@ -10,6 +10,8 @@ import ProduitsPage from './components/produit'
 import UsersPage from './components/user'
 import RetoursPage from './components/retour'
 import NonConformitePage from './components/nonconfirmite'
+import HistoriquePage from './components/historique'
+import ActionPage from './components/action'
 
 
 const navItems = [
@@ -17,7 +19,9 @@ const navItems = [
   { key: 'utilisateurs', label: 'Utilisateurs', icon: Users },
   { key: 'produit', label: 'Produits', icon: PackageCheck },
   { key: 'retours', label: 'Gestion des retours', icon: FileText },
-  { key: 'nonconfirmite', label: 'Non-conformités', icon: ShieldCheck }
+  { key: 'nonconfirmite', label: 'Non-conformités', icon: ShieldCheck },
+  { key: 'historique', label: 'Historique', icon: FileText },
+  { key: 'action', label: 'Actions', icon: FileText }
 
 ]
 
@@ -102,6 +106,10 @@ export default function AdminHome({ onLogout }) {
         {active === 'retours' && <RetoursPage />}
 
         {active === 'nonconfirmite' && <NonConformitePage />}
+
+        {active === 'historique' && <HistoriquePage />}
+
+        {active === 'action' && <ActionPage />}
 
         {active === 'utilisateurs' && (
           <UsersPage />

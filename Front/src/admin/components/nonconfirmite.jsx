@@ -6,10 +6,10 @@ import {
 	Pencil,
 	Trash2,
 	Plus,
-	RotateCcw,
 	Filter,
 	Calendar,
 	Link2,
+	X,
 } from 'lucide-react'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL
@@ -22,7 +22,47 @@ const ADD_NON_CONFORMITE = `${API_BASE_URL}/NonConformite/add`
 const UPDATE_NON_CONFORMITE = `${API_BASE_URL}/NonConformite/update`
 const DELETE_NON_CONFORMITE = `${API_BASE_URL}/NonConformite/delete`
 
-const GRAVITY_LEVELS = ['MINEURE', 'MAJEURE', 'CRITIQUE']
+const GRAVITY_LEVELS = ['FAIBLE', 'MOYENNE', 'ELEVEE', 'CRITIQUE']
+
+const normalizeGraviteValue = (value) => {
+	const normalized = String(value ?? '')
+		.trim()
+		.toUpperCase()
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+
+	if (!normalized) {
+		return 'FAIBLE'
+	}
+
+	if (normalized === 'LOW' || normalized === 'FAIBLE') {
+		return 'FAIBLE'
+	}
+
+	if (
+		normalized === 'MEDIUM' ||
+		normalized === 'MOYEN' ||
+		normalized === 'MOYENNE'
+	) {
+		return 'MOYENNE'
+	}
+
+	if (
+		normalized === 'HIGH' ||
+		normalized === 'ELEVEE' ||
+		normalized === 'ELEVATED'
+	) {
+		return 'ELEVEE'
+	}
+
+	if (normalized === 'CRITICAL' || normalized === 'CRITIQUE') {
+		return 'CRITIQUE'
+	}
+
+	return GRAVITY_LEVELS.includes(normalized)
+		? normalized
+		: 'FAIBLE'
+}
 
 const normalizeNonConformite = (payload) => {
 	const list = Array.isArray(payload)
@@ -35,21 +75,45 @@ const normalizeNonConformite = (payload) => {
 		.map((item) => ({
 			id: item.id,
 			description: item.description ?? '',
-			gravite: item.gravite ?? 'MINEURE',
-			retourProduitId: item.retourProduitId ?? item.retourProduit?.id ?? '',
-			retourProduit: item.retourProduit?.id ? `Retour #${item.retourProduit.id}` : `Retour #${item.retourProduitId ?? item.id}`,
-			dateConstatation: item.dateConstatation ?? item.date ?? item.createdAt ?? '',
+			commentaires: item.commentaires ?? '',
+			gravite: normalizeGraviteValue(
+				item.gravite ??
+					item.gravity ??
+					item.niveauGravite ??
+					item.severity
+			),
+			retourProduitId:
+				item.retourProduitId ??
+				item.retourProduit?.id ??
+				'',
+			retourProduit: item.retourProduit?.id
+				? `Retour #${item.retourProduit.id}`
+				: `Retour #${item.retourProduitId ?? item.id}`,
+			dateConstatation:
+				item.dateConstatation ??
+				item.date ??
+				item.createdAt ??
+				'',
 		}))
-		.sort((left, right) => String(right.dateConstatation).localeCompare(String(left.dateConstatation)))
+		.sort((left, right) =>
+			String(right.dateConstatation).localeCompare(
+				String(left.dateConstatation)
+			)
+		)
 }
 
 const getGraviteStyle = (gravite) => {
 	switch (gravite) {
 		case 'CRITIQUE':
 			return 'bg-rose-100 text-rose-700'
-		case 'MAJEURE':
+
+		case 'ELEVEE':
+			return 'bg-orange-100 text-orange-700'
+
+		case 'MOYENNE':
 			return 'bg-amber-100 text-amber-700'
-		case 'MINEURE':
+
+		case 'FAIBLE':
 		default:
 			return 'bg-emerald-100 text-emerald-700'
 	}
@@ -57,7 +121,8 @@ const getGraviteStyle = (gravite) => {
 
 const emptyForm = {
 	description: '',
-	gravite: 'MINEURE',
+	commentaires: '',
+	gravite: 'FAIBLE',
 	retourProduitId: '',
 	dateConstatation: '',
 }
@@ -72,6 +137,8 @@ export default function NonConformitePage() {
 	const [filterMode, setFilterMode] = useState('ALL')
 	const [filterValue, setFilterValue] = useState('')
 	const [search, setSearch] = useState('')
+	const [showModal, setShowModal] = useState(false)
+
 	const [form, setForm] = useState(emptyForm)
 
 	const authHeaders = {
@@ -82,8 +149,14 @@ export default function NonConformitePage() {
 	}
 
 	const loadAllItems = async () => {
-		const response = await axios.get(GET_NON_CONFORMITES, authHeaders)
-		const normalized = normalizeNonConformite(response.data)
+		const response = await axios.get(
+			GET_NON_CONFORMITES,
+			authHeaders
+		)
+
+		const normalized = normalizeNonConformite(
+			response.data
+		)
 
 		setAllItems(normalized)
 		setItems(normalized)
@@ -115,10 +188,18 @@ export default function NonConformitePage() {
 				endpoint = GET_NON_CONFORMITES_BY_DATE
 			}
 
-			const response = await axios.get(`${endpoint}/${filterValue.trim()}`, authHeaders)
+			const response = await axios.get(
+				`${endpoint}/${filterValue.trim()}`,
+				authHeaders
+			)
+
 			setItems(normalizeNonConformite(response.data))
 		} catch (err) {
-			setError(err.response?.data?.message || err.message || 'Erreur lors du filtrage des non-conformités')
+			setError(
+				err.response?.data?.message ||
+					err.message ||
+					'Erreur lors du filtrage des non-conformités'
+			)
 		} finally {
 			setLoading(false)
 		}
@@ -131,7 +212,11 @@ export default function NonConformitePage() {
 				setError('')
 				await loadAllItems()
 			} catch (err) {
-				setError(err.response?.data?.message || err.message || 'Erreur lors du chargement des non-conformités')
+				setError(
+					err.response?.data?.message ||
+						err.message ||
+						'Erreur lors du chargement des non-conformités'
+				)
 			} finally {
 				setLoading(false)
 			}
@@ -150,6 +235,7 @@ export default function NonConformitePage() {
 		return items.filter((item) => {
 			return [
 				item.description,
+				item.commentaires,
 				item.gravite,
 				item.retourProduit,
 				String(item.retourProduitId),
@@ -162,18 +248,48 @@ export default function NonConformitePage() {
 	}, [items, search])
 
 	const stats = useMemo(() => {
+		const retourIds = new Set()
+
 		return allItems.reduce(
 			(accumulator, item) => {
 				accumulator.total += 1
 
-				if (item.gravite === 'MINEURE') accumulator.mineure += 1
-				if (item.gravite === 'MAJEURE') accumulator.majeure += 1
-				if (item.gravite === 'CRITIQUE') accumulator.critique += 1
+				if (item.retourProduitId !== '' && item.retourProduitId !== null && item.retourProduitId !== undefined) {
+					retourIds.add(String(item.retourProduitId))
+				}
+
+				if (item.gravite === 'FAIBLE')
+					accumulator.faible += 1
+
+				if (item.gravite === 'MOYENNE')
+					accumulator.moyenne += 1
+
+				if (item.gravite === 'ELEVEE')
+					accumulator.elevee += 1
+
+				if (item.gravite === 'CRITIQUE')
+					accumulator.critique += 1
 
 				return accumulator
 			},
-			{ total: 0, mineure: 0, majeure: 0, critique: 0 }
+			{
+				total: 0,
+				faible: 0,
+				moyenne: 0,
+				elevee: 0,
+				critique: 0,
+				retours: 0,
+			}
 		)
+
+		return {
+			total: allItems.length,
+			faible: allItems.filter((item) => item.gravite === 'FAIBLE').length,
+			moyenne: allItems.filter((item) => item.gravite === 'MOYENNE').length,
+			elevee: allItems.filter((item) => item.gravite === 'ELEVEE').length,
+			critique: allItems.filter((item) => item.gravite === 'CRITIQUE').length,
+			retours: retourIds.size,
+		}
 	}, [allItems])
 
 	const handleChange = (event) => {
@@ -187,27 +303,40 @@ export default function NonConformitePage() {
 
 	const resetForm = () => {
 		setEditingId(null)
+		setShowModal(false)
 		setForm(emptyForm)
 	}
 
 	const editItem = (item) => {
 		setEditingId(item.id)
+
 		setForm({
 			description: item.description,
+			commentaires: item.commentaires || '',
 			gravite: item.gravite,
 			retourProduitId: item.retourProduitId,
-			dateConstatation: item.dateConstatation?.slice?.(0, 10) || item.dateConstatation || '',
+			dateConstatation:
+				item.dateConstatation?.slice?.(0, 10) ||
+				item.dateConstatation ||
+				'',
 		})
+
+		setShowModal(true)
 	}
 
 	const saveItem = async () => {
-		if (!form.description || !form.retourProduitId || !form.dateConstatation) {
+		if (
+			!form.description ||
+			!form.retourProduitId ||
+			!form.dateConstatation
+		) {
 			alert('Please fill all required fields')
 			return
 		}
 
 		const payload = {
 			description: form.description,
+			commentaires: form.commentaires,
 			gravite: form.gravite,
 			retourProduitId: Number(form.retourProduitId),
 			dateConstatation: form.dateConstatation,
@@ -217,37 +346,63 @@ export default function NonConformitePage() {
 			setSaving(true)
 
 			if (editingId) {
-				await axios.put(`${UPDATE_NON_CONFORMITE}/${editingId}`, payload, authHeaders)
+				await axios.put(
+					`${UPDATE_NON_CONFORMITE}/${editingId}`,
+					payload,
+					authHeaders
+				)
+
 				alert('Non-conformité updated successfully')
 			} else {
-				await axios.post(ADD_NON_CONFORMITE, payload, authHeaders)
+				await axios.post(
+					ADD_NON_CONFORMITE,
+					payload,
+					authHeaders
+				)
+
 				alert('Non-conformité created successfully')
 			}
 
 			resetForm()
+
 			await loadAllItems()
 			await applyFilter()
 		} catch (err) {
 			console.error(err)
-			alert(err.response?.data?.message || 'Error saving non-conformité')
+
+			alert(
+				err.response?.data?.message ||
+					'Error saving non-conformité'
+			)
 		} finally {
 			setSaving(false)
 		}
 	}
 
 	const deleteItem = async (id) => {
-		const confirmDelete = window.confirm('Delete this non-conformité ?')
+		const confirmDelete = window.confirm(
+			'Delete this non-conformité ?'
+		)
 
 		if (!confirmDelete) return
 
 		try {
-			await axios.delete(`${DELETE_NON_CONFORMITE}/${id}`, authHeaders)
+			await axios.delete(
+				`${DELETE_NON_CONFORMITE}/${id}`,
+				authHeaders
+			)
+
 			alert('Non-conformité deleted successfully')
+
 			await loadAllItems()
 			await applyFilter()
 		} catch (err) {
 			console.error(err)
-			alert(err.response?.data?.message || 'Error deleting non-conformité')
+
+			alert(
+				err.response?.data?.message ||
+					'Error deleting non-conformité'
+			)
 		}
 	}
 
@@ -273,74 +428,227 @@ export default function NonConformitePage() {
 				<ShieldCheck size={34} color="#2563eb" />
 
 				<div>
-					<h1 style={titleStyle}>Gestion des non-conformités</h1>
-					<p style={subtitleStyle}>Suivre les anomalies liées aux retours produits</p>
+					<h1 style={titleStyle}>
+						Gestion des non-conformités
+					</h1>
+
+					<p style={subtitleStyle}>
+						Suivre les anomalies liées aux retours produits
+					</p>
 				</div>
 			</div>
 
 			<div style={statsGridStyle}>
-				<StatCard title="Total" value={stats.total} hint="Non-conformités enregistrées" accent="#1d4ed8" />
-				<StatCard title="Mineures" value={stats.mineure} hint="Anomalies légères" accent="#059669" />
-				<StatCard title="Majeures" value={stats.majeure} hint="Anomalies importantes" accent="#f59e0b" />
-				<StatCard title="Critiques" value={stats.critique} hint="Anomalies bloquantes" accent="#dc2626" />
+				<StatCard
+					title="Total"
+					value={stats.total}
+					hint="Non-conformités enregistrées"
+					accent="#1d4ed8"
+				/>
+
+				<StatCard
+					title="Faibles"
+					value={stats.faible}
+					hint="Anomalies légères"
+					accent="#10b981"
+				/>
+
+				<StatCard
+					title="Moyennes"
+					value={stats.moyenne}
+					hint="Anomalies modérées"
+					accent="#f59e0b"
+				/>
+
+				<StatCard
+					title="Élevées"
+					value={stats.elevee}
+					hint="Anomalies importantes"
+					accent="#f97316"
+				/>
+
+				<StatCard
+					title="Critiques"
+					value={stats.critique}
+					hint="Anomalies bloquantes"
+					accent="#dc2626"
+				/>
+
+				
 			</div>
 
-			<div style={cardStyle}>
-				<div style={sectionHeaderStyle}>
-					<div>
-						<h2 style={sectionTitle}>{editingId ? 'Update Non-Conformity' : 'Add Non-Conformity'}</h2>
-						<p style={sectionSubtitle}>Associez la non-conformité à un retour produit existant</p>
+			{showModal && (
+				<div style={modalOverlayStyle}>
+					<div style={modalStyle}>
+						<div style={modalHeaderStyle}>
+							<div>
+								<h2 style={sectionTitle}>
+									{editingId
+										? 'Update Non-Conformity'
+										: 'Add Non-Conformity'}
+								</h2>
+
+								<p style={sectionSubtitle}>
+									Associez la non-conformité à un
+									retour produit
+								</p>
+							</div>
+
+							<button
+								onClick={resetForm}
+								style={closeButtonStyle}
+							>
+								<X size={18} />
+							</button>
+						</div>
+
+						<div style={formGrid}>
+							<input
+								type="text"
+								name="description"
+								placeholder="Description"
+								value={form.description}
+								onChange={handleChange}
+								style={inputStyle}
+							/>
+
+							<textarea
+								name="commentaires"
+								placeholder="Commentaires"
+								value={form.commentaires}
+								onChange={handleChange}
+								style={textareaStyle}
+							/>
+
+							<select
+								name="gravite"
+								value={form.gravite}
+								onChange={handleChange}
+								style={inputStyle}
+							>
+								{GRAVITY_LEVELS.map((level) => (
+									<option
+										key={level}
+										value={level}
+									>
+										{level}
+									</option>
+								))}
+							</select>
+
+							<input
+								type="number"
+								name="retourProduitId"
+								placeholder="Retour Produit ID"
+								value={form.retourProduitId}
+								onChange={handleChange}
+								style={inputStyle}
+							/>
+
+							<input
+								type="date"
+								name="dateConstatation"
+								value={form.dateConstatation}
+								onChange={handleChange}
+								style={inputStyle}
+							/>
+						</div>
+
+						<div style={buttonContainer}>
+							<button
+								onClick={saveItem}
+								disabled={saving}
+								style={primaryButton}
+							>
+								<Plus size={18} />
+
+								{editingId
+									? 'Update'
+									: 'Add Non-Conformity'}
+							</button>
+
+							<button
+								onClick={resetForm}
+								style={secondaryButton}
+							>
+								Cancel
+							</button>
+						</div>
 					</div>
-
-					<button onClick={resetForm} style={secondaryButton}>
-						<RotateCcw size={18} /> Reset
-					</button>
 				</div>
-
-				<div style={formGrid}>
-					<input type="text" name="description" placeholder="Description" value={form.description} onChange={handleChange} style={inputStyle} />
-					<select name="gravite" value={form.gravite} onChange={handleChange} style={inputStyle}>
-						{GRAVITY_LEVELS.map((level) => (
-							<option key={level} value={level}>{level}</option>
-						))}
-					</select>
-					<input type="number" name="retourProduitId" placeholder="Retour Produit ID" value={form.retourProduitId} onChange={handleChange} style={inputStyle} />
-					<input type="date" name="dateConstatation" value={form.dateConstatation} onChange={handleChange} style={inputStyle} />
-				</div>
-
-				<div style={buttonContainer}>
-					<button onClick={saveItem} disabled={saving} style={primaryButton}>
-						<Plus size={18} />
-						{editingId ? 'Update' : 'Add Non-Conformity'}
-					</button>
-				</div>
-			</div>
+			)}
 
 			<div style={cardStyle}>
 				<div style={toolbarStyle}>
 					<div>
-						<h2 style={sectionTitle}>Filtrer les non-conformités</h2>
-						<p style={sectionSubtitle}>Utilise les endpoints de recherche par gravité, date ou retour</p>
+						<h2 style={sectionTitle}>
+							Filtrer les non-conformités
+						</h2>
+
+						<p style={sectionSubtitle}>
+							Utilise les endpoints de recherche par
+							gravité, date ou retour
+						</p>
 					</div>
 
 					<div style={toolbarActions}>
 						<div style={selectWrap}>
 							<Filter size={16} color="#64748b" />
-							<select value={filterMode} onChange={(event) => setFilterMode(event.target.value)} style={selectStyle}>
-								<option value="ALL">Toutes les non-conformités</option>
-								<option value="GRAVITY">Par gravité</option>
-								<option value="RETOUR">Par retour</option>
-								<option value="DATE">Par date</option>
+
+							<select
+								value={filterMode}
+								onChange={(event) =>
+									setFilterMode(
+										event.target.value
+									)
+								}
+								style={selectStyle}
+							>
+								<option value="ALL">
+									Toutes les non-conformités
+								</option>
+
+								<option value="GRAVITY">
+									Par gravité
+								</option>
+
+								<option value="RETOUR">
+									Par retour
+								</option>
+
+								<option value="DATE">
+									Par date
+								</option>
 							</select>
 						</div>
 
 						{filterMode === 'GRAVITY' && (
 							<div style={selectWrap}>
-								<ShieldCheck size={16} color="#64748b" />
-								<select value={filterValue} onChange={(event) => setFilterValue(event.target.value)} style={selectStyle}>
-									<option value="">Choisir la gravité</option>
+								<ShieldCheck
+									size={16}
+									color="#64748b"
+								/>
+
+								<select
+									value={filterValue}
+									onChange={(event) =>
+										setFilterValue(
+											event.target.value
+										)
+									}
+									style={selectStyle}
+								>
+									<option value="">
+										Choisir la gravité
+									</option>
+
 									{GRAVITY_LEVELS.map((level) => (
-										<option key={level} value={level}>{level}</option>
+										<option
+											key={level}
+											value={level}
+										>
+											{level}
+										</option>
 									))}
 								</select>
 							</div>
@@ -350,7 +658,11 @@ export default function NonConformitePage() {
 							<input
 								type="number"
 								value={filterValue}
-								onChange={(event) => setFilterValue(event.target.value)}
+								onChange={(event) =>
+									setFilterValue(
+										event.target.value
+									)
+								}
 								placeholder="Retour Produit ID"
 								style={searchStyle}
 							/>
@@ -358,31 +670,37 @@ export default function NonConformitePage() {
 
 						{filterMode === 'DATE' && (
 							<div style={selectWrap}>
-								<Calendar size={16} color="#64748b" />
+								<Calendar
+									size={16}
+									color="#64748b"
+								/>
+
 								<input
 									type="date"
 									value={filterValue}
-									onChange={(event) => setFilterValue(event.target.value)}
+									onChange={(event) =>
+										setFilterValue(
+											event.target.value
+										)
+									}
 									style={dateStyle}
 								/>
 							</div>
 						)}
 
-						<button onClick={applySelectedFilter} style={primaryButton}>
-							<Link2 size={18} /> Apply
+						<button
+							onClick={applySelectedFilter}
+							style={primaryButton}
+						>
+							<Link2 size={18} />
+							Apply
 						</button>
-
-						<input
-							type="text"
-							value={search}
-							onChange={(event) => setSearch(event.target.value)}
-							placeholder="Recherche par description, gravité ou retour"
-							style={searchStyle}
-						/>
 					</div>
 				</div>
 
-				{error ? <p style={errorStyle}>{error}</p> : null}
+				{error ? (
+					<p style={errorStyle}>{error}</p>
+				) : null}
 
 				<div style={tableWrap}>
 					{loading ? (
@@ -391,8 +709,12 @@ export default function NonConformitePage() {
 						<table style={tableStyle}>
 							<thead style={theadStyle}>
 								<tr>
-									<th style={thStyle}>ID</th>
-									<th style={thStyle}>Description</th>
+									<th style={thStyle}>
+										Description
+									</th>
+									<th style={thStyle}>
+										Commentaires
+									</th>
 									<th style={thStyle}>Retour</th>
 									<th style={thStyle}>Date</th>
 									<th style={thStyle}>Gravité</th>
@@ -403,28 +725,99 @@ export default function NonConformitePage() {
 							<tbody>
 								{filteredItems.length === 0 ? (
 									<tr>
-										<td colSpan="6" style={emptyStateStyle}>No non-conformities found</td>
+										<td
+											colSpan="6"
+											style={
+												emptyStateStyle
+											}
+										>
+											No non-conformities
+											found
+										</td>
 									</tr>
 								) : (
 									filteredItems.map((item) => (
-										<tr key={item.id} style={rowStyle}>
-											<td style={tdStyle}>{item.id}</td>
-											<td style={tdStyle}>{item.description}</td>
-											<td style={tdStyle}>{item.retourProduit}</td>
-											<td style={tdStyle}>{item.dateConstatation?.slice?.(0, 10) || item.dateConstatation}</td>
+										<tr
+											key={item.id}
+											style={rowStyle}
+										>
 											<td style={tdStyle}>
-												<span style={{ ...statusChipStyle, ...graviteStyles[getGraviteStyle(item.gravite)] }}>
+												{item.description}
+											</td>
+
+											<td style={tdStyle}>
+												{
+													item.commentaires
+												}
+											</td>
+
+											<td style={tdStyle}>
+												{
+													item.retourProduit
+												}
+											</td>
+
+											<td style={tdStyle}>
+												{item.dateConstatation?.slice?.(
+													0,
+													10
+												) ||
+													item.dateConstatation}
+											</td>
+
+											<td style={tdStyle}>
+												<span
+													style={{
+														...statusChipStyle,
+														...graviteStyles[
+															getGraviteStyle(
+																item.gravite
+															)
+														],
+													}}
+												>
 													{item.gravite}
 												</span>
 											</td>
+
 											<td style={tdStyle}>
-												<div style={actionGroupStyle}>
-													<button onClick={() => editItem(item)} style={editButton}>
-														<Pencil size={16} />
+												<div
+													style={
+														actionGroupStyle
+													}
+												>
+													<button
+														onClick={() =>
+															editItem(
+																item
+															)
+														}
+														style={
+															editButton
+														}
+													>
+														<Pencil
+															size={
+																16
+															}
+														/>
 													</button>
 
-													<button onClick={() => deleteItem(item.id)} style={deleteButton}>
-														<Trash2 size={16} />
+													<button
+														onClick={() =>
+															deleteItem(
+																item.id
+															)
+														}
+														style={
+															deleteButton
+														}
+													>
+														<Trash2
+															size={
+																16
+															}
+														/>
 													</button>
 												</div>
 											</td>
@@ -444,7 +837,9 @@ function StatCard({ title, value, hint, accent }) {
 	return (
 		<div style={{ ...statCardStyle, background: accent }}>
 			<p style={statTitleStyle}>{title}</p>
+
 			<h2 style={statValueStyle}>{value}</h2>
+
 			<p style={statHintStyle}>{hint}</p>
 		</div>
 	)
@@ -475,7 +870,8 @@ const subtitleStyle = {
 
 const statsGridStyle = {
 	display: 'grid',
-	gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+	gridTemplateColumns:
+		'repeat(auto-fit, minmax(180px, 1fr))',
 	gap: '16px',
 	marginBottom: '24px',
 }
@@ -487,9 +883,23 @@ const statCardStyle = {
 	boxShadow: '0 10px 24px rgba(15, 23, 42, 0.12)',
 }
 
-const statTitleStyle = { margin: 0, opacity: 0.85, fontSize: '14px' }
-const statValueStyle = { margin: '8px 0 4px', fontSize: '34px', fontWeight: 800 }
-const statHintStyle = { margin: 0, opacity: 0.9, fontSize: '13px' }
+const statTitleStyle = {
+	margin: 0,
+	opacity: 0.85,
+	fontSize: '14px',
+}
+
+const statValueStyle = {
+	margin: '8px 0 4px',
+	fontSize: '34px',
+	fontWeight: 800,
+}
+
+const statHintStyle = {
+	margin: 0,
+	opacity: 0.9,
+	fontSize: '13px',
+}
 
 const cardStyle = {
 	background: 'white',
@@ -521,7 +931,8 @@ const sectionSubtitle = {
 
 const formGrid = {
 	display: 'grid',
-	gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+	gridTemplateColumns:
+		'repeat(auto-fit, minmax(220px, 1fr))',
 	gap: '15px',
 }
 
@@ -531,6 +942,17 @@ const inputStyle = {
 	border: '1px solid #cbd5e1',
 	outline: 'none',
 	fontSize: '14px',
+}
+
+const textareaStyle = {
+	padding: '12px',
+	borderRadius: '10px',
+	border: '1px solid #cbd5e1',
+	outline: 'none',
+	fontSize: '14px',
+	minHeight: '120px',
+	resize: 'vertical',
+	gridColumn: '1 / -1',
 }
 
 const buttonContainer = {
@@ -630,7 +1052,10 @@ const tableWrap = {
 	border: '1px solid #e2e8f0',
 }
 
-const loadingStyle = { padding: '20px', color: '#64748b' }
+const loadingStyle = {
+	padding: '20px',
+	color: '#64748b',
+}
 
 const tableStyle = {
 	width: '100%',
@@ -705,16 +1130,67 @@ const graviteStyles = {
 		background: '#ffe4e6',
 		color: '#be123c',
 	},
+
+	'bg-orange-100 text-orange-700': {
+		background: '#ffedd5',
+		color: '#c2410c',
+	},
+
 	'bg-amber-100 text-amber-700': {
 		background: '#fef3c7',
 		color: '#b45309',
 	},
+
 	'bg-emerald-100 text-emerald-700': {
 		background: '#d1fae5',
 		color: '#047857',
 	},
+
 	'bg-slate-100 text-slate-700': {
 		background: '#e2e8f0',
 		color: '#334155',
 	},
+}
+
+const modalOverlayStyle = {
+	position: 'fixed',
+	top: 0,
+	left: 0,
+	right: 0,
+	bottom: 0,
+	background: 'rgba(15, 23, 42, 0.55)',
+	display: 'flex',
+	alignItems: 'center',
+	justifyContent: 'center',
+	zIndex: 999,
+	padding: '20px',
+}
+
+const modalStyle = {
+	background: 'white',
+	borderRadius: '20px',
+	padding: '25px',
+	width: '100%',
+	maxWidth: '700px',
+	boxShadow: '0 20px 45px rgba(0,0,0,0.2)',
+	maxHeight: '90vh',
+	overflowY: 'auto',
+}
+
+const modalHeaderStyle = {
+	display: 'flex',
+	justifyContent: 'space-between',
+	alignItems: 'flex-start',
+	marginBottom: '20px',
+}
+
+const closeButtonStyle = {
+	border: 'none',
+	background: '#fee2e2',
+	color: '#b91c1c',
+	width: '36px',
+	height: '36px',
+	borderRadius: '10px',
+	cursor: 'pointer',
+	fontWeight: 'bold',
 }

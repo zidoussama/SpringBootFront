@@ -22,6 +22,8 @@ const DELETE_RETOUR = `${API_BASE_URL}/retours/delete`
 const GET_PRODUCTS = `${API_BASE_URL}/produits/getall`
 const GET_USERS = `${API_BASE_URL}/users/getall`
 
+const COUNT_RETOURS_BY_ETAT = `${API_BASE_URL}/retours/countbyetat/`
+
 const RETURN_STATES = ['EN_COURS', 'TRAITE', 'REJCTED']
 
 const getTodayDate = () => new Date().toISOString().slice(0, 10)
@@ -81,7 +83,7 @@ export default function RetoursPage() {
 	const [error, setError] = useState('')
 	const [editingId, setEditingId] = useState(null)
 	const [isModalOpen, setIsModalOpen] = useState(false)
-	const [selectedState, setSelectedState] = useState('EN_COURS')
+	const [selectedState, setSelectedState] = useState('ALL')
 	const [search, setSearch] = useState('')
 	const [form, setForm] = useState(emptyForm)
 
@@ -91,6 +93,50 @@ export default function RetoursPage() {
 			'Content-Type': 'application/json',
 		},
 	}
+
+    const [stats, setStats] = useState({
+        total: 0,
+        waiting: 0,
+        done: 0,
+        rejected: 0,
+    })
+
+    const fetchStats = async () => {
+        try {
+            const [enCours, traite, rejected] = await Promise.all([
+                axios.get(`${COUNT_RETOURS_BY_ETAT}EN_COURS`, authHeaders),
+                axios.get(`${COUNT_RETOURS_BY_ETAT}TRAITE`, authHeaders),
+                axios.get(`${COUNT_RETOURS_BY_ETAT}REJCTED`, authHeaders),
+            ])
+
+
+            const waiting = Number(enCours.data.count|| 0)
+            const done = Number(traite.data.count || 0)
+            const rejectedCount = Number(rejected.data.count || 0)
+
+            setStats({
+                total: waiting + done + rejectedCount,
+                waiting,
+                done,
+                rejected: rejectedCount,
+            })
+        } catch (err) {
+            console.error('Error fetching retours count by etat:', err)
+
+            setStats({
+                total: 0,
+                waiting: 0,
+                done: 0,
+                rejected: 0,
+            })
+        }
+    }
+
+    useEffect(() => {
+        fetchStats()
+    }, [])
+
+
 
 	const loadRetours = async (state = selectedState) => {
 		try {
@@ -117,8 +163,8 @@ export default function RetoursPage() {
 		}
 	}
 
-	useEffect(() => {
-		loadRetours('EN_COURS')
+	useEffect(() =>  {
+		loadRetours('ALL')
 	}, [])
 
 	useEffect(() => {
@@ -177,23 +223,6 @@ export default function RetoursPage() {
 		})
 	}, [retours, search])
 
-	const stats = useMemo(() => {
-		return allRetours.reduce(
-			(accumulator, retour) => {
-				accumulator.total += 1
-
-				if (retour.etatTraitement === 'EN_COURS') accumulator.waiting += 1
-				if (retour.etatTraitement === 'TRAITE') accumulator.done += 1
-				if (retour.etatTraitement === 'REJCTED' || retour.etatTraitement === 'REJECT') {
-					accumulator.rejected += 1
-				}
-
-				return accumulator
-			},
-			{ total: 0, waiting: 0, done: 0, rejected: 0 }
-		)
-	}, [allRetours])
-
 	const handleChange = (event) => {
 		const { name, value } = event.target
 
@@ -234,64 +263,74 @@ export default function RetoursPage() {
 		setIsModalOpen(true)
 	}
 
-	const saveRetour = async () => {
-		if (!form.produitId || !form.utilisateurId || !form.quantite || !form.raison || !form.date) {
-			alert('Please fill all required fields')
-			return
-		}
-
-		const payload = {
-			produitId: Number(form.produitId),
-			utilisateurId: Number(form.utilisateurId),
-			quantite: Number(form.quantite),
-			raison: form.raison,
-			date: form.date,
-			etatTraitement: form.etatTraitement,
-		}
-
-		try {
-			setSaving(true)
-
-			if (editingId) {
-				await axios.put(`${UPDATE_RETOUR}/${editingId}`, payload, authHeaders)
-				alert('Retour updated successfully')
-			} else {
-				await axios.post(ADD_RETOUR, payload, authHeaders)
-				alert('Retour created successfully')
-			}
-
-			closeModal()
-			await loadRetours('ALL')
-
-			if (selectedState !== 'ALL') {
-				await loadRetours(selectedState)
-			}
-		} catch (err) {
-			console.error(err)
-			alert(err.response?.data?.message || 'Error saving retour')
-		} finally {
-			setSaving(false)
-		}
+const saveRetour = async () => {
+	if (!form.produitId || !form.utilisateurId || !form.quantite || !form.raison || !form.date) {
+		alert('Please fill all required fields')
+		return
 	}
 
-	const deleteRetour = async (id) => {
-		const confirmDelete = window.confirm('Delete this retour ?')
-
-		if (!confirmDelete) return
-
-		try {
-			await axios.delete(`${DELETE_RETOUR}/${id}`, authHeaders)
-			alert('Retour deleted successfully')
-			await loadRetours('ALL')
-
-			if (selectedState !== 'ALL') {
-				await loadRetours(selectedState)
-			}
-		} catch (err) {
-			console.error(err)
-			alert(err.response?.data?.message || 'Error deleting retour')
-		}
+	const payload = {
+		produitId: Number(form.produitId),
+		utilisateurId: Number(form.utilisateurId),
+		quantite: Number(form.quantite),
+		raison: form.raison,
+		date: form.date,
+		etatTraitement: form.etatTraitement,
 	}
+
+	try {
+		setSaving(true)
+
+		if (editingId) {
+			await axios.put(`${UPDATE_RETOUR}/${editingId}`, payload, authHeaders)
+			alert('Retour updated successfully')
+		} else {
+			await axios.post(ADD_RETOUR, payload, authHeaders)
+			alert('Retour created successfully')
+		}
+
+		closeModal()
+
+		await loadRetours('ALL')
+
+		if (selectedState !== 'ALL') {
+			await loadRetours(selectedState)
+		}
+
+		await fetchStats()
+	} catch (err) {
+		console.error(err)
+		alert(err.response?.data?.message || 'Error saving retour')
+	} finally {
+		setSaving(false)
+	}
+}
+
+
+const deleteRetour = async (id) => {
+	const confirmDelete = window.confirm('Delete this retour ?')
+
+	if (!confirmDelete) return
+
+	try {
+		await axios.delete(`${DELETE_RETOUR}/${id}`, authHeaders)
+
+		alert('Retour deleted successfully')
+
+		await loadRetours('ALL')
+
+		if (selectedState !== 'ALL') {
+			await loadRetours(selectedState)
+		}
+
+		await fetchStats()
+	} catch (err) {
+		console.error(err)
+		alert(err.response?.data?.message || 'Error deleting retour')
+	}
+}
+
+
 
 	return (
 		<div style={pageStyle}>
@@ -327,8 +366,8 @@ export default function RetoursPage() {
 			<div style={cardStyle}>
 				<div style={toolbarStyle}>
 					<div>
-						<h2 style={sectionTitle}>Retours en cours</h2>
-						<p style={sectionSubtitle}>Retours en cours de traitement</p>
+						<h2 style={sectionTitle}>Tous les retours</h2>
+						<p style={sectionSubtitle}>Liste complète des retours</p>
 					</div>
 
 					<div style={toolbarActions}>

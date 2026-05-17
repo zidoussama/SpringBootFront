@@ -327,7 +327,6 @@ function UsersPage() {
 					<table style={tableStyle}>
 						<thead style={theadStyle}>
 							<tr>
-								<th style={thStyle}>ID</th>
 								<th style={thStyle}>Name</th>
 								<th style={thStyle}>Email</th>
 								<th style={thStyle}>Role</th>
@@ -341,7 +340,7 @@ function UsersPage() {
 							{users.length === 0 ? (
 								<tr>
 									<td
-										colSpan="5"
+										colSpan="4"
 										style={emptyStyle}
 									>
 										No users found
@@ -353,10 +352,6 @@ function UsersPage() {
 										key={user.id}
 										style={rowStyle}
 									>
-										<td style={tdStyle}>
-											{user.id}
-										</td>
-
 										<td style={tdStyle}>
 											{user.nom}
 										</td>

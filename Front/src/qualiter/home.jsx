@@ -1,5 +1,6 @@
 
 import React from 'react'
+import { useEffect, useState } from 'react'
 import {
   ClipboardList,
   AlertTriangle,
@@ -10,6 +11,9 @@ import {
 import Reclamation from './components/Reclamation'
 import NonCofurmite from './components/NonCofurmite'
 import HistoriqueRetour from './components/HistoriqueRetour'
+import Cookies from 'js-cookie'
+import { jwtDecode } from 'jwt-decode'
+
 
 const items = [
   {
@@ -28,10 +32,26 @@ const items = [
     icon: History,
   },
 ]
+  
+export default function QualityEmployeeHome({onLogout,}){
 
-export default function QualityEmployeeHome({
-  onLogout,
-}) {
+
+  const token = Cookies.get('auth_token')
+      const [decoded, setDecoded] = useState(null)
+      const [name, setName] = useState('')
+      const [email, setEmail] = useState('')
+      const [role, setRole] = useState('')
+      useEffect(() => {
+        if (token) {
+          const decoded = jwtDecode(token)
+          setDecoded(decoded)
+          setName(decoded.name )
+          setEmail(decoded.email)
+          setRole(decoded.role)
+    
+          
+        }
+      }, [token])
   const [active, setActive] =
     React.useState('retours')
 
@@ -88,11 +108,13 @@ export default function QualityEmployeeHome({
 
           <div>
             <h3 className="font-semibold text-slate-800">
-              Employé Qualité
+              {name}
             </h3>
-
+            <h4 >
+              {role}
+            </h4>
             <p className="text-sm text-slate-500">
-              Validation des non-conformités
+              {email}
             </p>
           </div>
         </div>
@@ -115,16 +137,6 @@ export default function QualityEmployeeHome({
         <header className="mb-8">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">
             Service Qualité
-          </p>
-
-          <h1 className="text-4xl font-black text-slate-800 mt-2">
-            Tableau de bord
-          </h1>
-
-          <p className="text-slate-500 mt-2">
-            Validation des retours,
-            traitement des non-conformités
-            et suivi des actions.
           </p>
         </header>
 

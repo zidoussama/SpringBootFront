@@ -405,7 +405,6 @@ function ProduitsPage() {
               }}
             >
               <tr>
-                <th style={thStyle}>ID</th>
                 <th style={thStyle}>Nom</th>
                 <th style={thStyle}>
                   Description
@@ -424,7 +423,7 @@ function ProduitsPage() {
               {products.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="6"
+                    colSpan="5"
                     style={{
                       padding: '20px',
                       textAlign: 'center',
@@ -442,10 +441,6 @@ function ProduitsPage() {
                         '1px solid #e2e8f0',
                     }}
                   >
-                    <td style={tdStyle}>
-                      {product.id}
-                    </td>
-
                     <td style={tdStyle}>
                       {product.nom}
                     </td>
