@@ -3,7 +3,7 @@ import { Save, X, AlertCircle } from 'lucide-react'
 import axios from 'axios'
 import Cookies from 'js-cookie'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL
+
 
 export default function ActionPage() {
   const [loading, setLoading] = useState(false)
@@ -32,8 +32,8 @@ export default function ActionPage() {
     const loadData = async () => {
       try {
         const [retoursResponse, usersResponse] = await Promise.all([
-          axios.get(`${API_BASE_URL}/retours/getall`, authHeaders),
-          axios.get(`${API_BASE_URL}/users/getall`, authHeaders),
+          axios.get(`/api/retours/getall`, authHeaders),
+          axios.get(`/api/users/getall`, authHeaders),
         ])
 
         // Normalize retours
@@ -98,7 +98,7 @@ export default function ActionPage() {
       }
 
       const response = await axios.post(
-        `${API_BASE_URL}/HistoriqueRetour/add`,
+        `/api/HistoriqueRetour/add`,
         payload,
         authHeaders
       )

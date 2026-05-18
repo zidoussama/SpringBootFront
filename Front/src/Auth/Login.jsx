@@ -6,8 +6,7 @@ import {
   PackageCheck,
 } from 'lucide-react'
 
-const LOGIN_ENDPOINT =
-  import.meta.env.VITE_API_URL + '/auth/login'
+const LOGIN_ENDPOINT ='/api/auth/login'
 
 function extractToken(payload) {
   if (typeof payload === 'string') {

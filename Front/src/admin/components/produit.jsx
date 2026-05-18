@@ -9,21 +9,19 @@ import {
   RotateCcw,
 } from 'lucide-react'
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  'http://localhost:9000'
+
 
 const GET_PRODUCTS =
-  `${API_BASE_URL}/produits/getall`
+  `/api/produits/getall`
 
 const ADD_PRODUCT =
-  `${API_BASE_URL}/produits/add`
+  `/api/produits/add`
 
 const UPDATE_PRODUCT =
-  `${API_BASE_URL}/produits/update`
+  `/api/produits/update`
 
 const DELETE_PRODUCT =
-  `${API_BASE_URL}/produits/delete`
+  `/api/produits/delete`
 
 function ProduitsPage() {
   const [products, setProducts] = useState([])

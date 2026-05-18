@@ -8,9 +8,9 @@ import {
 	X,
 } from 'lucide-react'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL
 
-const GET_HISTORIQUE = `${API_BASE_URL}/HistoriqueRetour/all`
+
+const GET_HISTORIQUE = `/api/HistoriqueRetour/all`
 
 const GRAVITY_LEVELS = ['FAIBLE', 'MOYENNE', 'ELEVEE', 'CRITIQUE']
 const ACTION_TYPES = ['CREATION', 'MODIFICATION', 'SUPPRESSION', 'VALIDATION']

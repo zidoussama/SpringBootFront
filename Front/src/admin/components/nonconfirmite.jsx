@@ -12,15 +12,15 @@ import {
 	X,
 } from 'lucide-react'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL
 
-const GET_NON_CONFORMITES = `${API_BASE_URL}/NonConformite/getall`
-const GET_NON_CONFORMITES_BY_GRAVITY = `${API_BASE_URL}/NonConformite/findByGravity`
-const GET_NON_CONFORMITES_BY_DATE = `${API_BASE_URL}/NonConformite/findByDate`
-const GET_NON_CONFORMITES_BY_RETOUR = `${API_BASE_URL}/NonConformite/findByRetour`
-const ADD_NON_CONFORMITE = `${API_BASE_URL}/NonConformite/add`
-const UPDATE_NON_CONFORMITE = `${API_BASE_URL}/NonConformite/update`
-const DELETE_NON_CONFORMITE = `${API_BASE_URL}/NonConformite/delete`
+
+const GET_NON_CONFORMITES = `/api/NonConformite/getall`
+const GET_NON_CONFORMITES_BY_GRAVITY = `/api/NonConformite/findByGravity`
+const GET_NON_CONFORMITES_BY_DATE = `/api/NonConformite/findByDate`
+const GET_NON_CONFORMITES_BY_RETOUR = `/api/NonConformite/findByRetour`
+const ADD_NON_CONFORMITE = `/api/NonConformite/add`
+const UPDATE_NON_CONFORMITE = `/api/NonConformite/update`
+const DELETE_NON_CONFORMITE = `/api/NonConformite/delete`
 
 const GRAVITY_LEVELS = ['FAIBLE', 'MOYENNE', 'ELEVEE', 'CRITIQUE']
 

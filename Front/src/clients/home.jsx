@@ -15,6 +15,7 @@ import ReclamationForm from './components/recclamation'
 import Historique from './components/historique'
 import { jwtDecode } from 'jwt-decode'
 import Cookies from 'js-cookie'
+import axios from 'axios'
 
 
 
@@ -54,11 +55,6 @@ const Sidebar = ({ onSelect, active, onLogout }) => {
       key: 'historique',
       label: 'Historique',
       icon: History,
-    },
-    {
-      key: 'details',
-      label: 'Détails',
-      icon: FileText,
     },
   ]
 
@@ -158,6 +154,63 @@ const DashboardCard = ({
 const ClientHome = ({ onLogout }) => {
   const [active, setActive] =
     React.useState('dashboard')
+  const [reclamationTotal, setReclamationTotal] = useState(0)
+  const [enCoursCount, setEnCoursCount] = useState(0)
+  const [traiteCount, setTraiteCount] = useState(0)
+  const [rejectedCount, setRejectedCount] = useState(0)
+  const [clientId, setClientId] = useState(null)
+
+  useEffect(() => {
+    const token = Cookies.get('auth_token')
+    if (token) {
+      try {
+        const decoded = jwtDecode(token)
+        setClientId(decoded.id || decoded.userId || decoded.sub)
+      } catch (error) {
+        console.error('Error decoding token:', error)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!clientId) return
+
+    const headers = {
+      Authorization: `Bearer ${Cookies.get('auth_token')}`
+    }
+
+    const countEtat = (etat) => {
+      return axios.get(
+        `/api/retours/countByClientAndEtat`,
+        {
+          headers,
+          params: {
+            clientId,
+            etat
+          }
+        }
+      )
+    }
+
+    Promise.all([
+      countEtat('EN_COURS'),
+      countEtat('TRAITE'),
+      countEtat('REJCTED')
+    ])
+      .then(([enCoursRes, traiteRes, rejectedRes]) => {
+        const ec = enCoursRes.data.count.count 
+        const tc = traiteRes.data.count.count
+        const rc = rejectedRes.data.count.count
+
+        setEnCoursCount(ec)
+        setTraiteCount(tc)
+        setRejectedCount(rc)
+        setReclamationTotal(ec + tc + rc)
+      })
+      .catch((error) => {
+        console.error('Error fetching reclamation counts:', error)
+      })
+  }, [clientId])
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -210,25 +263,30 @@ const ClientHome = ({ onLogout }) => {
         {active === 'dashboard' && (
           <div className="space-y-8">
             
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-4 gap-6">
               <DashboardCard
                 title="Réclamations"
-                value="24"
+                value={reclamationTotal}
                 color="bg-blue-600"
               />
 
               <DashboardCard
-                title="En attente"
-                value="8"
+                title="En cours"
+                value={enCoursCount}
                 color="bg-orange-500"
               />
 
-              <DashboardCard
-                title="Résolues"
-                value="16"
-                color="bg-green-600"
-              />
-            </div>
+                <DashboardCard
+                  title="traitee"
+                  value={traiteCount}
+                  color="bg-green-600"
+                />
+                <DashboardCard
+                  title="rejetée"
+                  value={rejectedCount}
+                  color="bg-red-600"
+                />
+              </div>
 
             <div className="bg-white rounded-3xl border border-slate-200 p-8">
               <h2 className="text-2xl font-bold text-slate-800 mb-6">

@@ -12,17 +12,17 @@ import {
 	X,
 } from 'lucide-react'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL 
+ 
 
-const GET_RETOURS = `${API_BASE_URL}/retours/getall`
-const GET_RETOURS_BY_STATE = `${API_BASE_URL}/retours/getbyetat`
-const ADD_RETOUR = `${API_BASE_URL}/retours/add`
-const UPDATE_RETOUR = `${API_BASE_URL}/retours/update`
-const DELETE_RETOUR = `${API_BASE_URL}/retours/delete`
-const GET_PRODUCTS = `${API_BASE_URL}/produits/getall`
-const GET_USERS = `${API_BASE_URL}/users/getall`
+const GET_RETOURS = `/api/retours/getall`
+const GET_RETOURS_BY_STATE = `/api/retours/getbyetat`
+const ADD_RETOUR = `/api/retours/add`
+const UPDATE_RETOUR = `/api/retours/update`
+const DELETE_RETOUR = `/api/retours/delete`
+const GET_PRODUCTS = `/api/produits/getall`
+const GET_USERS = `/api/users/getall`
 
-const COUNT_RETOURS_BY_ETAT = `${API_BASE_URL}/retours/countbyetat/`
+const COUNT_RETOURS_BY_ETAT = `/api/retours/countbyetat/`
 
 const RETURN_STATES = ['EN_COURS', 'TRAITE', 'REJCTED']
 

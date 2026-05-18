@@ -1,0 +1,40 @@
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: prod
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: gcr.io/spring-496709/finalback:latest
+          ports:
+            - containerPort: 9000
+          envFrom:
+          - secretRef:
+              name: backend-secret
+          - configMapRef:
+              name: backend-config
+---
+# Service (ClusterIP — internal only) ───────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: prod
+spec:
+  
+  selector:
+    app: backend
+  ports:
+    - port: 9000
+      targetPort: 9000

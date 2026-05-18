@@ -80,15 +80,15 @@ export default function Dashboard() {
 
 		Promise.all([
 			axios.get(
-				`${import.meta.env.VITE_API_URL}/retours/countbyetat/EN_COURS`,
+				`/api/retours/countbyetat/EN_COURS`,
 				{ headers }
 			),
 			axios.get(
-				`${import.meta.env.VITE_API_URL}/retours/countbyetat/TRAITE`,
+				`/api/retours/countbyetat/TRAITE`,
 				{ headers }
 			),
 			axios.get(
-				`${import.meta.env.VITE_API_URL}/retours/countbyetat/REJCTED`,
+				`/api/retours/countbyetat/REJCTED`,
 				{ headers }
 			)
 		])

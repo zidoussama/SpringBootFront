@@ -87,10 +87,9 @@ function normalizeRetours(payload) {
 		)
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
-const RETOURS_ENDPOINT = `${API_BASE_URL}/retours/getbyetat/EN_COURS`
-const UPDATE_RETOUR_ENDPOINT = `${API_BASE_URL}/retours/update`
-const ADD_NON_CONFORMITE_ENDPOINT = `${API_BASE_URL}/NonConformite/add`
+const RETOURS_ENDPOINT = `/api/retours/getbyetat/EN_COURS`
+const UPDATE_RETOUR_ENDPOINT = `/api/retours/update`
+const ADD_NON_CONFORMITE_ENDPOINT = `/api/NonConformite/add`
 
 const getToken = () => Cookies.get('auth_token') ?? ''
 

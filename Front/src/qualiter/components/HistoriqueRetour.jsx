@@ -6,10 +6,9 @@ import React, {
 import axios from 'axios'
 import Cookies from 'js-cookie'
 
-const API_BASE_URL =
-	import.meta.env.VITE_API_URL
 
-const HISTORIQUE_ENDPOINT = `${API_BASE_URL}/HistoriqueRetour/all`
+
+const HISTORIQUE_ENDPOINT = `/api/HistoriqueRetour/all`
 
 const getToken = () =>
 	Cookies.get('auth_token')

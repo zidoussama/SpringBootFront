@@ -5,8 +5,6 @@ import React, {
 
 import axios from 'axios'
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ?? ''
 
 const getCookieValue = (name) => {
   const value = document.cookie
@@ -84,7 +82,7 @@ export default function Historique() {
 
           const response =
             await axios.get(
-              `${API_BASE_URL}/retours/getbyclient/${clientId}`,
+              `/api/retours/getbyclient/${clientId}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,

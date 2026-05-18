@@ -5,14 +5,13 @@ import React, {
 } from 'react'
 import axios from 'axios'
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ?? ''
+
 
 const PRODUITS_ENDPOINT =
-  `${API_BASE_URL}/produits/getall`
+  `/api/produits/getall`
 
 const RECLAMATION_ENDPOINT =
-  `${API_BASE_URL}/retours/add`
+  `/api/retours/add`
 
 /* =======================================================
    HELPERS

@@ -7,8 +7,7 @@ import {
   PackageCheck,
 } from 'lucide-react'
 
-const REGISTER_ENDPOINT =
-  import.meta.env.VITE_API_URL + '/auth/register'
+const REGISTER_ENDPOINT ='/api/auth/register'
 
 function extractToken(payload) {
   if (typeof payload === 'string') {

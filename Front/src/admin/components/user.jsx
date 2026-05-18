@@ -10,20 +10,18 @@ import {
 	RotateCcw,
 } from 'lucide-react'
 
-const API_BASE_URL =
-	import.meta.env.VITE_API_URL || 'http://localhost:9000'
 
 const REGISTER =
-	`${API_BASE_URL}/auth/register`
+	`/api/auth/register`
 
 const GET_USERS =
-	`${API_BASE_URL}/users/getall`
+	`/api/users/getall`
 
 const DELETE_USER =
-	`${API_BASE_URL}/users/delete`
+	`/api/users/delete`
 
 const UPDATE_USER =
-	`${API_BASE_URL}/users/update`
+	`/api/users/update`
 
 function UsersPage() {
 	const [users, setUsers] = useState([])
