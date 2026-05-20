@@ -15,4 +15,4 @@ metadata:
   name: frontend-config
   namespace: prod
 data:
-  REACT_APP_API_URL: "https://prod.ecomp.codes"
+  VITE_API_URL: "https://spring.ecomp.codes/api"
